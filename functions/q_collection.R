@@ -16,11 +16,11 @@
 ## Output:  NULL, but creates a SQL-db with all daily measurements for each station 
 ## Input:   stations_tbl - list of selected gauging stations for download
 ## ----------------------------------------------
-load_q_all_countries <- function(stations_tbl){
+load_q_in_db <- function(stations_tbl){
   
   # define db directory
-  db_path <- "data/discharge/q_all.db"
-  log_file_path <- "logfiles/log_load_daily_measurements.log"
+  db_path <- "data/discharge/q.db"
+  log_file_path <- "logfiles/log_q_measurements.log"
   
   #Check q db existence
   if (file.exists(db_path)) {
@@ -34,18 +34,8 @@ load_q_all_countries <- function(stations_tbl){
     file.remove(log_file_path)
   }
   
-  # load french q measurements
-  load_q_FRA(stations_tbl = stations_tbl |> filter(country == "FRA"), 
-             date_start = "2017-01-01", date_end = "2024-02-29",
-             db_path, log_file_path)
-  
-  # load NZL q measurements
-  load_q_NZL(stations_tbl = stations_tbl |> filter(country == "NZL"), 
-             date_start = "2017-01-01", date_end = "2024-02-29",
-             db_path, log_file_path)
-  
-  # load NZL q measurements
-  load_q_CHL(stations_tbl = stations_tbl |> filter(country == "CHL"), 
+  # load q measurements
+  load_q_FRA(stations_tbl = stations_tbl, 
              date_start = "2017-01-01", date_end = "2024-02-29",
              db_path, log_file_path)
   
@@ -88,122 +78,6 @@ load_qdata_sql <- function(station_name, db_path) {
   
   return(data_station)
 }
-
-
-## ----------------------------------------------
-## Function: load daily discharge data for chilean stations in sql-table
-##
-## Output:  NULL, but creates a SQL-db with all daily measurements for each station 
-## Input:   stations_tbl - list of selected gauging stations for download
-##          date_start - first date of measurements
-##          date_end - last date of measurements
-## ----------------------------------------------
-load_q_CHL <- function(stations_tbl, date_start, date_end, db_path, logfile_path){
-  
-  require(RSQLite)  # store in sql-db
-  require(logging)  # log messages/errors
-  
-  # set up logging: bootstrap logging package, configurate parameters, start logging
-  basicConfig() 
-  addHandler(writeToFile, logger = "log_discharge_download", file = logfile_path)
-  loginfo("Script started.") 
-  
-  # Connect to the SQLite database (adjust the file path)
-  sqlconnection <- dbConnect(SQLite(), dbname = db_path)
-  
-  data <- read_csv("data/discharge/CHL/CHL_q_m3s_day.csv")
-  
-  # loop to save discharge data from all selected stations in a database
-  for (station_i in stations_tbl$ID_station) {
-    
-    gauge_i <- str_split(station_i, "_")[[1]][2]
-    
-    tryCatch({
-      # get data for each station accd. to date_start, date_end, select daily values
-      data_i <- data |> 
-        select(date, 
-               q_m3_s = all_of(gauge_i)) |> 
-        filter(as.Date(date) >= as.Date(date_start) & as.Date(date) <= as.Date(date_end)) |> 
-        mutate(date = as.character(date)) |> 
-        filter(!is.na(q_m3_s))
-      
-      # append measurements to table
-      dbWriteTable(sqlconnection, station_i, data_i, append = TRUE)
-      
-      # Log messages to track progress
-      loginfo(paste("Data written to file: ", gauge_i), logger = "log_discharge_download")
-    }, error = function(e) {
-      logerror(paste("!!! Error occurred: ", e$message), logger = "log_discharge_download")
-    })
-    
-  }
-  
-  
-  # Close the database connection when done
-  dbDisconnect(sqlconnection)
-  
-  return()
-}
-
-
-## ----------------------------------------------
-## Function: load daily discharge data for NZL stations in sql-table
-##
-## Output:  NULL, but creates a SQL-db with all daily measurements for each station 
-## Input:   stations_tbl - list of selected gauging stations for download
-##          date_start - first date of measurements
-##          date_end - last date of measurements
-## ----------------------------------------------
-load_q_NZL <- function(stations_tbl, date_start, date_end, db_path, logfile_path){
-  
-  require(RSQLite)  # store in sql-db
-  require(logging)  # log messages/errors
-  
-  # set up logging: bootstrap logging package, configurate parameters, start logging
-  basicConfig() 
-  addHandler(writeToFile, logger = "log_discharge_download", file = logfile_path)
-  loginfo("Script started.") 
-  
-  # Connect to the SQLite database (adjust the file path)
-  sqlconnection <- dbConnect(SQLite(), dbname = db_path)
-  
-  
-  # loop to save discharge data from all selected stations in a database
-  for (station_i in stations_tbl$ID_station) {
-    
-    gauge_i <- str_split(station_i, "_")[[1]][2]
-    
-    tryCatch({
-      # get data for each station accd. to date_start, date_end, select daily values
-      data_i <- read_csv(paste("data/discharge/NZL/", gauge_i, ".csv", sep = ""), skip = 1) |> 
-        mutate(date = as.Date(`Timestamp (UTC+12:00)`)) |> 
-        group_by(date) |> 
-        summarise(q_m3_s = mean(`Value (m^3/s)`)) |> 
-        ungroup() |> 
-        filter(date >= as.Date(date_start) & date <= as.Date(date_end)) |> 
-        mutate(date = as.character(date)) |> 
-        filter(!is.na(q_m3_s))
-      
-      # append measurements to table
-      dbWriteTable(sqlconnection, station_i, data_i, append = TRUE)
-      
-      # Log messages to track progress
-      loginfo(paste("Data written to file: ", gauge_i), logger = "log_discharge_download")
-    }, error = function(e) {
-      logerror(paste("!!! Error occurred: ", e$message), logger = "log_discharge_download")
-    })
-    
-  }
-  
-  
-  # Close the database connection when done
-  dbDisconnect(sqlconnection)
-  
-  return()
-}
-
-
-
 
 
 ## ----------------------------------------------

@@ -67,17 +67,19 @@ list(
   # load table with reach-station connections
   tar_target(
     stations_overview_tbl,
-    read_xlsx("data/POI_stations_overview.xlsx")
+    read_xlsx("data/stations_overview.xlsx")
   ),
   # load all discharge measurements in sql-table
   tar_target(
     q_data_path,
-    load_q_all_countries(stations_overview_tbl)
+    load_q_in_db(stations_overview_tbl)
   ),
   # load results from GEE-analysis
   tar_target(
-    poi_gee_analysis_2021,
-    read_csv("data/gee_analysis/poi_selected_s2_20240303_2021.csv")
+    s2_geedata_1724,
+    read_csv("data/gee_analysis/results_s2_20240212_1720.csv") |>
+      bind_rows(read_csv("data/gee_analysis/results_s2_20240212_2024.csv")) |> 
+      select(3:18) |> relocate(DGO_FID, DATE) |> arrange(DGO_FID, DATE)
   ),
   # combine discharge and gee-observation data in common table
   tar_target(
