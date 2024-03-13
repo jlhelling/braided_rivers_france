@@ -32,7 +32,7 @@ combine_q_gee_data <- function(station_tbl, gee_data_tbl, q_db_path, scale, sate
     combi_gee_data <- gee_data_tbl |>
       filter(DGO_FID == station_tbl[station_tbl$ID_combi==combi,]$DGO_FID) |> 
       # select only quality-validated entries with defined clearage score and complete coverage score
-      filter(COVERAGE_SCORE == 100) |> 
+      filter(COVERAGE_SCORE > 99) |> 
       filter(if (satellite_type == "Planet") CLEAR_SCORE > clear_score
              else CLOUD_SCORE < (100-clear_score))
     

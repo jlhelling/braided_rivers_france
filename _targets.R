@@ -121,14 +121,14 @@ list(
   # load results from GEE-analysis of Planet data
   tar_target(
     geedata_planet_1823_tbl,
-    read_csv("data/gee_analysis/planet/results_planet_eygue4_2018-2023.csv") |>
-      bind_rows(read_csv("data/gee_analysis/planet/results_planet_eygue7_2018-2023.csv"))
+    read_csv("data/gee_analysis/planet/results_planet_eygue4_2018-2023_new.csv") |>
+      bind_rows(read_csv("data/gee_analysis/planet/results_planet_eygue7_2018-2023_new.csv"))
   ), 
   # combine discharge and gee-observation data in common table
   tar_target(
     combined_planet_list,
     combine_q_gee_data(station_tbl = stations_overview_tbl, gee_data_tbl = geedata_planet_1823_tbl,
-                       q_db_path = q_data_path, scale = 3, satellite_type = "Planet", clear_score = 0)
+                       q_db_path = q_data_path, scale = 3, satellite_type = "Planet", clear_score = 50)
   ),
   # get b-value table with values from model and from Morel et al.
   tar_target(
