@@ -1,16 +1,4 @@
 ## ----------------------------------------------
-## Script by Leo Helling, created the 03.03.2024
-##
-## Script name: Load Discharge Data for BraidedRivers Analysis
-##
-## Purpose: provides all necessary functions to extract the desired discharge data for specific stations on BR
-##
-## ----------------------------------------------
-
-
-
-
-## ----------------------------------------------
 ## Function: applies all q-data-loading-functions in one batch to create common sql-database
 ##
 ## Output:  NULL, but creates a SQL-db with all daily measurements for each station 
@@ -28,7 +16,7 @@ load_q_in_db <- function(stations_tbl){
     file.remove(db_path)
   }
   
-  #Check logifle existence
+  #Check logfle existence
   if (file.exists(log_file_path)) {
     #Delete file if it exists
     file.remove(log_file_path)
@@ -63,10 +51,12 @@ load_qdata_sql <- function(station_name, db_path) {
   
   tryCatch({
     # load data from database
-    query <-
-      dbSendQuery(sqlconnection, paste("SELECT * FROM ", station_name, sep = ""))
+    query <-dbSendQuery(sqlconnection, paste("SELECT * FROM ", station_name, sep = ""))
+    
     data_station <- dbFetch(query) |> as_tibble()
     
+    # clear results query
+    dbClearResult(query)
     
   }, error = function(e) {
     # Handle the error (e.g., print a message or log it)
@@ -103,9 +93,7 @@ load_q_FRA <- function(stations_tbl, date_start, date_end, db_path, logfile_path
   sqlconnection <- dbConnect(SQLite(), dbname = db_path)
   
   # loop to save discharge data from all selected stations in a database
-  for (station_i in stations_tbl$ID_station) {
-    
-    gauge_i <- str_split(station_i, "_")[[1]][2]
+  for (gauge_i in unique(stations_tbl$ID_station)) {
     
     tryCatch({
       # get data for each station accd. to date_start, date_end, select daily values
@@ -126,7 +114,7 @@ load_q_FRA <- function(stations_tbl, date_start, date_end, db_path, logfile_path
               logger = "log_discharge_download")
       
       # append measurements to table
-      dbWriteTable(sqlconnection, station_i, data_i, append = TRUE)
+      dbWriteTable(sqlconnection, gauge_i, data_i, append = TRUE)
       
       # Log messages to track progress
       loginfo(paste("Data written to file: ", gauge_i), logger = "log_discharge_download")
