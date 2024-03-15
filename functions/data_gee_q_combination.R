@@ -1,5 +1,8 @@
 ## ----------------------------------------------
-#| Function: loads results from GEE analysis and combines it with q data in common list-object
+#| Function: loads results from GEE analysis and combines it with q data in common list-object, 
+#|            (also marks unvalid width measurements :
+#|                  - widths smaller than 2 x pixelresolution 
+#|                  - widths potentially influenced by snow when q<0.5q_max but WATER_AREA >= 0.8*AC_AREA)
 #|
 #| Output:  list with combined discharge and satellite data for each reach-gauge combination
 #| Input:   station_tbl:    reaches-gauges over view table,
@@ -33,8 +36,8 @@ combine_q_gee_data <- function(station_tbl, gee_data_tbl, q_db_path, scale, sate
       filter(DGO_FID == station_tbl[station_tbl$ID_combi==combi,]$DGO_FID) |> 
       # select only quality-validated entries with defined clearage score and complete coverage score
       filter(COVERAGE_SCORE > 99) |> 
-      filter(if (satellite_type == "Planet") CLEAR_SCORE > clear_score
-             else CLOUD_SCORE < (100-clear_score))
+      filter(if (satellite_type == "Planet") CLEAR_SCORE >= clear_score
+             else CLOUD_SCORE <= (100-clear_score))
     
     # Check if combi_qdata is not NULL or has > zero rows
     if (!is.null(combi_qdata)) {
@@ -56,8 +59,15 @@ combine_q_gee_data <- function(station_tbl, gee_data_tbl, q_db_path, scale, sate
                                    is.na(WATER_AREA/length_reach) ~ 0)) |> 
         # mark widths < 2xscale
         mutate(valid = as.factor(case_when((width_m >= scale*2) ~ TRUE,
-                                           (width_m < scale*2) ~ FALSE))) |> 
-        
+                                           (width_m < scale*2) ~ FALSE)))
+      
+      # identify maximum discharge
+      q_max = max(data_combined_tbl$q_m3_s)
+      
+        # mark widths potentially influenced by snow when q<0.5q_max but WATER_AREA >= 0.8*AC_AREA
+      data_combined_tbl <- data_combined_tbl |> 
+        mutate(valid = if_else((WATER_AREA >= 0.8*AC_AREA) & (q_m3_s < 0.5*q_max), 
+                               factor(FALSE), valid)) |> 
         relocate(DATE, width_m, q_m3_s, WATER_AREA, valid)
       
     } 

@@ -121,14 +121,16 @@ list(
   # load results from GEE-analysis of Planet data
   tar_target(
     geedata_planet_1823_tbl,
-    read_csv("data/gee_analysis/planet/results_planet_eygue4_2018-2023_new.csv") |>
-      bind_rows(read_csv("data/gee_analysis/planet/results_planet_eygue7_2018-2023_new.csv"))
+    read_csv("data/gee_analysis/planet/results_planet_20240315.csv")
+    # read_csv("data/gee_analysis/planet/results_planet_eygue4_20240314.csv") |>
+    #   bind_rows(read_csv("data/gee_analysis/planet/results_planet_eygue7_20240314.csv")) |> 
+    #   bind_rows(read_csv("data/gee_analysis/planet/results_planet_drac5_20240314.csv"))
   ), 
   # combine discharge and gee-observation data in common table
   tar_target(
     combined_planet_list,
     combine_q_gee_data(station_tbl = stations_overview_tbl, gee_data_tbl = geedata_planet_1823_tbl,
-                       q_db_path = q_data_path, scale = 3, satellite_type = "Planet", clear_score = 50)
+                       q_db_path = q_data_path, scale = 3, satellite_type = "Planet", clear_score = 100)
   ),
   # get b-value table with values from model and from Morel et al.
   tar_target(
@@ -151,6 +153,13 @@ list(
     create_planet_s2_comparison_plots(combined_s2_list = combined_s2_list, 
                                       combined_planet_list = combined_planet_list, 
                                       save_path = "export/comparison_s2-planet/")
+  ),
+  tar_target(
+    create_width_plots_both_satellites,
+    save_width_plots_combined(qw_combined_list_s2 = combined_s2_list, 
+                              qw_combined_list_planet = combined_planet_list, 
+                              save_path = "export/combined_s2-planet/", 
+                              qw_control_tbl = qw_controls_tbl)
   )
 
 )
