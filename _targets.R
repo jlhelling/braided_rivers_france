@@ -61,9 +61,9 @@ tar_source("functions")
 #|     common plot
 #|  4) b-value-table creation
 
-
-
+# path of results from Morel et al. (2019) study
 path_morel_data <- "data/morel_france/Data_geomorphology.csv"
+
 # FINAL LIST OF TARGETS TO BE COMPILED
 
 list(
@@ -122,9 +122,6 @@ list(
   tar_target(
     geedata_planet_1823_tbl,
     read_csv("data/gee_analysis/planet/results_planet_20240315.csv")
-    # read_csv("data/gee_analysis/planet/results_planet_eygue4_20240314.csv") |>
-    #   bind_rows(read_csv("data/gee_analysis/planet/results_planet_eygue7_20240314.csv")) |> 
-    #   bind_rows(read_csv("data/gee_analysis/planet/results_planet_drac5_20240314.csv"))
   ), 
   # combine discharge and gee-observation data in common table
   tar_target(

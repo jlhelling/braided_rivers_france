@@ -1,4 +1,12 @@
-
+## ----------------------------------------------
+#| Function: load control measurements of water extents from the BDORTHO-image analysis and from Morel et al. study
+#|
+#| Output:  table with combined discharge and water widths for each reach-gauge combination
+#| Input:   station_tbl:    reaches-gauges over view table,
+#|          q_db_path:      path of db with discharge measurements, 
+#|          bdortho_path:   path of shapefile with control-measurements of waterextents from BDORTHO-images, 
+#|          morel_path:     path of csv-file with results from Morel et el. study
+## ----------------------------------------------
 get_control_measurements <- function(station_tbl, q_db_path, bdortho_path, morel_path){
   
   # load BDOrtho data
@@ -51,18 +59,20 @@ load_bdortho_measurements <- function(station_tbl, q_db_path, bdortho_path){
       q_i <- NA
       
       # get q value of specific date for each reach-station combination
-      q_i <- 
-        load_qdata_sql(gauge_i, q_db_path) |> 
-        mutate(date = as.Date(date)) |> 
-        filter(!is.na(q_m3_s)) |> 
-        group_by(code_site, date) |> 
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE)), .groups = "drop") |> 
-        filter(date==date_i) |> 
-        pull(var = q_m3_s)
+      if(!is.null(load_qdata_sql(gauge_i, q_db_path)) ){
+        q_i <- load_qdata_sql(gauge_i, q_db_path) |> 
+          mutate(date = as.Date(date)) |> 
+          filter(!is.na(q_m3_s)) |> 
+          group_by(code_site, date) |> 
+          summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE)), .groups = "drop") |> 
+          filter(date==date_i) |> 
+          pull(var = q_m3_s)
+        
+        # add data to tibble
+        q_data_i <- tibble(id_reach = reach_i, gauge = gauge_i, date = date_i, q_m3_s = q_i)
+        q_data <- q_data |> add_row(q_data_i)
+      }
       
-      # add data to tibble
-      q_data_i <- tibble(id_reach = reach_i, gauge = gauge_i, date = date_i, q_m3_s = q_i)
-      q_data <- q_data |> add_row(q_data_i)
     }
   }
   
