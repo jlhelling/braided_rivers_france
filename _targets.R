@@ -1,10 +1,14 @@
 ## ----------------------------------------------
 #| Script by Leo Helling, created the 13.03.2024
 #|
-#| Name:    Braided Rivers Analysis Main function
+#| Name:    Braided Rivers Analysis 
 #|
-#| Purpose: organise the analysis in one main script, run the analysis stepwise in a pipeline approach 
-#|          to skip costly runtime for tasks that are already up to date
+#| Purpose: Analysis of discharge-width relationships in french braided river reaches based on 
+#|          satellite imagery obtained from GoogleEarthEngine via the GloUrbEE-workflow and 
+#|          daily discharge measurements from the Hubeau-platform  
+#| 
+#|          This script organises the analysis in one main script, run the analysis stepwise in 
+#|          a pipeline approach to skip costly runtime for tasks that are already up to date
 #|
 #| HOW-TO:  1) select the whole code in this script, press CTRL+SPACE to run it
 #|          2) run "tar_make()" in the console to run the whole analysis via targets-pipeline
